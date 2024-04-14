@@ -1,0 +1,27 @@
+FROM python:3.9
+
+# Keeps Python from generating .pyc files in the container
+ENV PYTHONDONTWRITEBYTECODE 1
+
+# Turns off buffering for easier container logging
+ENV PYTHONUNBUFFERED 1
+
+# Install CMake for gqlalchemy
+RUN apt-get update && \
+  apt-get --yes install cmake && \
+  rm -rf /var/lib/apt/lists/*
+
+# Install poetry
+RUN pip install -U pip \
+  && python -m pip install setuptools \
+  && curl -sSL https://install.python-poetry.org | python
+ENV PATH="/root/.local/bin:${PATH}"
+
+WORKDIR /app
+COPY . .
+RUN poetry config virtualenvs.create false && \
+    poetry install --no-interaction --no-ansi
+
+ENV FLASK_ENV=development
+ENV LC_ALL=C.UTF-8
+ENV LANG=C.UTF-8
