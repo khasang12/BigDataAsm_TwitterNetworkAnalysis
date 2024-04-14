@@ -111,8 +111,9 @@ def pulsarconsumer():
 @app.before_first_request
 def execute_this():
     init_log()
-    greenthread.spawn(set_up_memgraph_and_broker())
+    greenthread.spawn(set_up_memgraph_and_broker)
     if BROKER == 'kafka':
         greenthread.spawn(kafkaconsumer)
     else:    
         greenthread.spawn(pulsarconsumer)
+    greenthread.sleep(0)

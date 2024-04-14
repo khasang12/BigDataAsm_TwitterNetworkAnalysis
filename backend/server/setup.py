@@ -32,8 +32,7 @@ def connect_to_memgraph(memgraph_ip, memgraph_port):
 def run(memgraph):
     try:
         memgraph.drop_database()
-
-        log.info("Setting up PageRank")
+        #print("Setting up PageRank")
         memgraph.execute("CALL pagerank_online.set(100, 0.2) YIELD *")
         memgraph.execute(
             """CREATE TRIGGER pagerank_trigger 
@@ -43,9 +42,9 @@ def run(memgraph):
                CALL publisher.update_rank(node, rank);"""
         )
 
-        log.info("Setting up community detection")
+        #print("Setting up community detection")
         memgraph.execute(
-            "CALL community_detection_online.set(False, False, 0.7, 4.0, 0.1, 'weight', 1.0, 100, 5) YIELD *;"
+            "CALL community_detection_online.set(True, False, 0.7, 4.0, 0.1, 'weight', 1.0, 100, 5) YIELD *;"
         )
         memgraph.execute(
             """CREATE TRIGGER labelrankt_trigger 
@@ -55,35 +54,48 @@ def run(memgraph):
                SET node.cluster=community_id
                CALL publisher.update_cluster(node, community_id);"""
         )
-
-        log.info("Creating stream connections on Memgraph")
-        stream = None
-        if BROKER == "kafka":
-            stream = MemgraphKafkaStream(
-                name="retweets",
-                topics=["retweets"],
-                transform="twitter.tweet",
-                bootstrap_servers="'kafka:9092'",
-            )
-        else:
-            stream = MemgraphPulsarStream(
-                name="retweets",
-                topics=["retweets"],
-                transform="twitter.tweet",
-                service_url="'pulsar://pulsar:6650'",
-            )
-        memgraph.create_stream(stream)
-        memgraph.start_stream(stream)
-
-        log.info("Creating triggers on Memgraph")
-        trigger = MemgraphTrigger(
-            name="created_trigger",
-            event_type=TriggerEventType.CREATE,
-            event_object=TriggerEventObject.ALL,
-            execution_phase=TriggerExecutionPhase.AFTER,
-            statement="CALL publisher.create(createdObjects)",
+        
+        #print("Creating triggers on Memgraph")
+        memgraph.execute(
+            "CREATE TRIGGER created_trigger ON CREATE AFTER COMMIT EXECUTE CALL publisher.create(createdObjects)"
         )
-        memgraph.create_trigger(trigger)
+
+        #print("Creating stream connections on Memgraph")
+        memgraph.execute(
+            "CREATE KAFKA STREAM retweets TOPICS retweets TRANSFORM twitter.tweet"
+        )
+
+        memgraph.execute("START STREAM retweets")
+        # if BROKER == "kafka":
+        #     stream = MemgraphKafkaStream(
+        #         name="retweets",
+        #         topics=["retweets"],
+        #         transform="twitter.tweet",
+        #         bootstrap_servers="'kafka:9092'",
+        #     )
+        #     print("stream created")
+        # else:
+        #     stream = MemgraphPulsarStream(
+        #         name="retweets",
+        #         topics=["retweets"],
+        #         transform="twitter.tweet",
+        #         service_url="'pulsar://pulsar:6650'",
+        #     )
+        # print("gogogo start")
+        # memgraph.create_stream(stream)
+        # memgraph.start_stream(stream)
+        # print("gogogo end")
+
+        # log.info("Creating triggers on Memgraph")
+        # trigger = MemgraphTrigger(
+        #     name="created_trigger",
+        #     event_type=TriggerEventType.CREATE,
+        #     event_object=TriggerEventObject.ALL,
+        #     execution_phase=TriggerExecutionPhase.AFTER,
+        #     statement="CALL publisher.create(createdObjects)",
+        # )
+        # memgraph.create_trigger(trigger)
+        # print("create_trigger")
 
     except Exception as e:
         log.info(f"Error on stream and trigger creation: {e}")
