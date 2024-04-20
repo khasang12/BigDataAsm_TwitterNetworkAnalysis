@@ -16,7 +16,7 @@ PULSAR_IP = os.getenv("PULSAR_IP", "pulsar")
 PULSAR_PORT = os.getenv("PULSAR_PORT", "6650")
 PULSAR_TOPIC = os.getenv("PULSAR_TOPIC", "retweets")
 
-TWITTER_DATA = "data/scraped_tweets.csv"
+TWITTER_DATA = "data/twitter_combined.csv"
 
 
 def restricted_float(x):
