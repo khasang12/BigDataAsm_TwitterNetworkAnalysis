@@ -48,26 +48,7 @@ You will need:
 
 ## Running the app
 
-### With a bash script
-
-You can start everything but the frontend client by **running the bash script**:
-
-```
-bash run_kafka.sh
-```
-
-If you want to run the app with Apache Pulsar, use the script `bash
-run_pulsar.sh`. After that, in another window, run the frontend app with:
-
-```
-docker-compose up frontend-app
-```
-
-The React application will be running on `http://localhost:3000`.
-
-### Manually using Docker Compose
-
-If you want to start the app **without using the bash script**, then:
+### Stage 1 - Docker Compose
 
 **1.** Remove possibly running containers:
 
@@ -81,32 +62,44 @@ docker-compose rm -fs
 docker-compose build
 ```
 
-**3.** Start the **Apache Kafka** and **Memgraph MAGE** services:
+**3.** Build and Start the services:
 
 ```
-docker-compose up -d kafka
-docker-compose up -d memgraph-mage-kafka
+docker-compose up --build
 ```
 
-**4.** Start the data stream:
+**4.** Start the services
 
 ```
-docker-compose up -d stream-kafka
+docker-compose up
 ```
 
-**5.** Start the backend application:
+### Stage 2 - Memgraph Configuration
 
-```
-docker-compose up backend-kafka
-```
+**1.** Install MemgraphLab
+https://memgraph.com/download
 
-**6.** Start the frontend application in a new terminal window:
+**2.** Import .cypherl file in `/memgraph`
 
-```
-docker-compose up frontend-app
-```
+Four triggers should be setup now: `labelrankt_trigger`, `node2vec_trigger`, `pagerank_trigger`, `created_trigger`
 
-The React application will be running on `http://localhost:3000`.
+**3.** Create and Start Kafka Stream
+
+Remember to add transformation `twitter` afterwards and start the stream. Nodes and Relationships value should then be updated in real-time.
+
+![alt text](img/image.png)
+
+### Stage 3 - Run the App
+
+**4.** Start the application
+
+The React application will be running on `http://localhost:3000`. Notice that if you restart any services, you should also restart the web app to view the changes.
+
+**5.** Run Prediction API
+
+Import the file attached via Postman in `/backend`
+
+![alt text](img/api.png)
 
 ## The visualization
 
