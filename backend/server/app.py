@@ -1,6 +1,9 @@
 from argparse import ArgumentParser
+from typing import List, Tuple
+
+import gqlalchemy
 from eventlet import greenthread
-from flask import Flask, Response
+from flask import Flask, Response, request
 from flask_cors import CORS, cross_origin
 from flask_socketio import SocketIO, emit
 from functools import wraps
@@ -66,6 +69,21 @@ def set_up_memgraph_and_broker():
 @cross_origin()
 def get_health():
     return Response(json.dumps("Health OK"), status=200)
+
+@app.route("/embeddings", methods=["GET"])
+@cross_origin()
+def get_embeddings():
+    global memgraph
+    res = setup.get_embeddings(memgraph)
+    return Response(json.dumps(res), status=200, content_type='application/json')
+
+@app.route("/predict", methods=["GET"])
+@cross_origin()
+def get_predictions():
+    global memgraph
+    limit = request.args.get('limit')
+    res = setup.get_predictions(memgraph, limit)
+    return Response(json.dumps(res), status=200, content_type='application/json')
 
 
 def kafkaconsumer():
